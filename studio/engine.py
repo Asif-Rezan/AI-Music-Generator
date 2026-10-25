@@ -6,7 +6,15 @@ from django.core.files.base import ContentFile
 class EngineError(Exception):
     pass
 
+def configuration_error():
+    if settings.IS_CLOUD and urlsplit(settings.ACESTEP_URL).hostname in {'localhost', '127.0.0.1', '::1'}:
+        return 'Music generation is not connected. Configure ACESTEP_URL in Vercel with the HTTPS address of a running ACE-Step server. The library works independently.'
+    return None
+
 def request(method, path, **kwargs):
+    error = configuration_error()
+    if error:
+        raise EngineError(error)
     try:
         response = requests.request(method, settings.ACESTEP_URL + path,
             headers={'Authorization': 'Bearer ' + settings.ACESTEP_API_KEY} if settings.ACESTEP_API_KEY else {},

@@ -38,6 +38,9 @@ def generate(request):
     form=GenerationForm(data)
     if not form.is_valid():
         return JsonResponse({'error': form.errors.get_json_data()}, status=400)
+    configuration_error = engine.configuration_error()
+    if configuration_error:
+        return JsonResponse({"error": configuration_error}, status=503)
     track=Track.objects.create(**form.cleaned_data)
     try:
         engine.submit(track)
