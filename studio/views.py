@@ -14,7 +14,7 @@ def serialize(t):
 
 @require_GET
 def index(request):
-    return render(request, 'studio/index.html', {'is_cloud': settings.IS_CLOUD})
+    return render(request, 'studio/index.html', {'is_cloud': settings.IS_CLOUD, 'temporary_storage': settings.TEMPORARY_STORAGE})
 
 @require_GET
 def health(request):
@@ -26,14 +26,10 @@ def health(request):
 
 @require_GET
 def tracks(request):
-    if not settings.CLOUD_STORAGE_READY:
-        return JsonResponse({'tracks': [], 'message': 'Connect a PostgreSQL database to enable your saved library.'})
     return JsonResponse({'tracks': [serialize(t) for t in Track.objects.all()[:100]]})
 
 @require_POST
 def generate(request):
-    if not settings.CLOUD_STORAGE_READY:
-        return JsonResponse({'error': 'Generation is not configured yet. Connect a PostgreSQL database and a reachable ACE-Step server in Vercel environment settings.'}, status=503)
     try:
         data=json.loads(request.body)
         if not isinstance(data,dict): raise ValueError()

@@ -48,4 +48,8 @@ The development server binds only to loopback. Before network deployment add aut
 
 ## Vercel
 
-Import this repository with the Django framework preset. Vercel serves static files automatically. Pushes to main deploy production. Set DJANGO_SECRET_KEY privately, DATABASE_URL to PostgreSQL, and ACESTEP_URL to your reachable inference API (plus ACESTEP_API_KEY when required). Run migrations against that database before enabling generation. Without DATABASE_URL, the studio renders but explicitly disables generation and explains the missing setup. Vercel cannot reach your computer's localhost engine. Audio in /tmp is temporary; durable cloud audio storage is still required before relying on saved audio across instances or deployments.
+Import with the Django preset. Pushes to main deploy automatically. Set DJANGO_SECRET_KEY privately and ACESTEP_URL to a reachable inference API (plus ACESTEP_API_KEY if required). Vercel cannot reach your computer's localhost engine.
+
+By default Vercel uses temporary SQLite at /tmp/sonora/db.sqlite3 and audio files at /tmp/sonora/media. The first request runs migrations under a process/thread lock. Each instance has its own library; history and audio may disappear on restart or when requests reach a different instance. Download audio promptly. This is explicitly disposable storage, not a durable library.
+
+Optionally set DATABASE_URL for PostgreSQL instead; run migrations against it before use. Audio still uses temporary storage unless replaced with a durable storage backend. Local development continues to use db.sqlite3 and media/ in the project folder.

@@ -127,10 +127,14 @@ MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
-CLOUD_STORAGE_READY = not os.getenv("VERCEL") or bool(os.getenv("DATABASE_URL"))
+TEMPORARY_STORAGE = bool(os.getenv("VERCEL")) and not os.getenv("DATABASE_URL")
 if os.getenv("DATABASE_URL"):
     DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=True)
 if os.getenv("VERCEL"):
-    MEDIA_ROOT = Path("/tmp/sonora-media")
+    MEDIA_ROOT = Path("/tmp/sonora/media")
+if TEMPORARY_STORAGE:
+    DATABASES["default"]["NAME"] = Path("/tmp/sonora/db.sqlite3")
+    DATABASES["default"]["OPTIONS"] = {"timeout": 30}
+    MIDDLEWARE.insert(1, "studio.middleware.TemporaryDatabaseMiddleware")
 
 IS_CLOUD = bool(os.getenv("VERCEL"))

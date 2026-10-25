@@ -60,13 +60,13 @@ class StudioTests(TestCase):
         engine.refresh(t);self.assertEqual(t.status,'running')
         req.return_value=[{'status':2,'error':'Out of memory'}]
         with self.assertRaisesMessage(engine.EngineError,'Out of memory'):engine.refresh(t)
-    @override_settings(CLOUD_STORAGE_READY=False)
-    def test_cloud_without_database_explains_setup(self):
-        self.assertEqual(self.client.get('/api/tracks/').json()['tracks'], [])
-        r=self.client.post('/api/generate/',self.payload(),content_type='application/json')
-        self.assertEqual(r.status_code,503)
-        self.assertIn('PostgreSQL',r.json()['error'])
     def test_lyrics_visible_by_default(self):
         response=self.client.get('/')
         self.assertContains(response,'Write your lyrics')
         self.assertNotContains(response,'id="lyrics-area" hidden')
+
+    @override_settings(TEMPORARY_STORAGE=True, IS_CLOUD=True)
+    def test_temporary_library_notice(self):
+        response = self.client.get('/')
+        self.assertContains(response, 'Temporary library')
+        self.assertNotContains(response, 'connect PostgreSQL')
