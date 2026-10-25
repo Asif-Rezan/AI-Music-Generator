@@ -8,6 +8,8 @@ class EngineError(Exception):
     pass
 
 def configuration_error():
+    if settings.ACESTEP_PROVIDER == 'huggingface':
+        return None
     if settings.IS_CLOUD and urlsplit(settings.ACESTEP_URL).hostname in {'localhost', '127.0.0.1', '::1'}:
         return 'Music generation is not connected. Configure ACESTEP_URL in Vercel with the HTTPS address of a running ACE-Step server. The library works independently.'
     return None
@@ -29,6 +31,10 @@ def request(method, path, **kwargs):
         raise EngineError('ACE-Step is unavailable. Start its API on ' + settings.ACESTEP_URL + ' and retry.') from exc
 
 def submit(track):
+    if settings.ACESTEP_PROVIDER == 'huggingface':
+        from .free_engine import generate
+        generate(track)
+        return
     result = request('POST', '/release_task', json={
         'prompt': track.prompt, 'lyrics': '[Instrumental]' if track.instrumental else prepare_lyrics(track.lyrics),
         'vocal_language': vocal_language(track.lyrics),

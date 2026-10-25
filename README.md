@@ -59,3 +59,9 @@ Optionally set DATABASE_URL for PostgreSQL instead; run migrations against it be
 Create lives at `/`; the searchable library lives at `/library/`. Browser back/forward work with ordinary links, and a session draft preserves composer fields across navigation. Library filtering runs locally; unchanged polling results do not recreate audio players. Background polling pauses while the tab is hidden.
 
 Bengali and English lyrics are accepted as UTF-8, up to 12,000 characters. Paste lyrics with emoji decorations and Bengali section annotations directly. Originals are saved unchanged. The engine adapter normalizes Unicode, converts Bengali verse/chorus headings to section tags, expands a chorus marked “দুইবার” twice, and sets `vocal_language=bn` when Bengali characters are present. This prepares the API request; actual pronunciation and vocal quality depend on the connected ACE-Step model and have not been verified without a running inference server.
+
+## Free hosted generation
+
+On Vercel, when no ACESTEP_URL is explicitly set, the app uses the official public ACE-Step/Ace-Step-v1.5 Hugging Face Space via gradio_client. This sends prompts and lyrics to that external service. Queues, sleeping/unavailable Spaces, and ZeroGPU daily quotas can prevent generation. No payment or paid inference fallback is configured. A personal HF_TOKEN may be set privately in Vercel for authenticated quota; do not put it into source control or chat. An explicit ACESTEP_URL selects the dedicated REST integration; ACESTEP_PROVIDER can also be set to rest or huggingface.
+
+Free generation waits up to 240 seconds in the request; do not close the tab while it runs. A successful result is saved in temporary media storage. Quota errors are shown and retained in the library. The real unauthenticated API was tested and returned a ZeroGPU quota error (0 seconds remaining); generated audio was not obtained. Mocked tests cover completion/file saving and quota handling.

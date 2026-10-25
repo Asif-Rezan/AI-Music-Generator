@@ -71,7 +71,7 @@ class StudioTests(TestCase):
         self.assertContains(response, 'Temporary collection')
         self.assertNotContains(response, 'connect PostgreSQL')
 
-    @override_settings(IS_CLOUD=True, ACESTEP_URL='http://127.0.0.1:8001')
+    @override_settings(IS_CLOUD=True, ACESTEP_PROVIDER='rest', ACESTEP_URL='http://127.0.0.1:8001')
     def test_cloud_library_works_without_generation_engine(self):
         self.assertEqual(self.client.get('/api/tracks/').status_code, 200)
         self.assertEqual(self.client.get('/api/tracks/').json(), {'tracks': []})
@@ -106,3 +106,33 @@ class StudioTests(TestCase):
         self.assertEqual(sent['lyrics'].count('টুক টুক টুক, টুকটুকি,'), 2)
         self.assertIn('শুভরাত্রি, প্রজাপতি!', sent['lyrics'])
         self.assertNotIn('🎵', sent['lyrics'])
+
+    @override_settings(ACESTEP_PROVIDER='huggingface')
+    @patch('gradio_client.Client')
+    def test_free_provider_quota_error_is_saved(self, client):
+        names = ['param_4','param_5','param_6','param_9','param_15','param_16']
+        client.return_value.view_api.return_value = {'named_endpoints': {'/generation_wrapper': {'parameters': [{'parameter_name': name} for name in names]}}}
+        client.return_value.submit.return_value.result.side_effect = Exception('You have exceeded your ZeroGPU quota (0s left)')
+        response = self.client.post('/api/generate/',self.payload(),content_type='application/json')
+        self.assertEqual(response.status_code,503)
+        self.assertIn('Free GPU quota reached',response.json()['error'])
+        self.assertEqual(Track.objects.get().status,'failed')
+
+    @override_settings(ACESTEP_PROVIDER='huggingface')
+    @patch('gradio_client.Client')
+    def test_free_provider_completion_saves_downloaded_audio(self, client):
+        from pathlib import Path
+        def factory(*args, **kwargs):
+            audio=Path(kwargs['download_files'])/'generated.mp3'
+            audio.write_bytes(b'ID3mockaudio')
+            instance=Mock()
+            names=['param_4','param_5','param_6','param_9','param_15','param_16']
+            instance.view_api.return_value={'named_endpoints': {'/generation_wrapper': {'parameters':[{'parameter_name': name} for name in names]}}}
+            instance.submit.return_value.result.return_value=(str(audio),)
+            return instance
+        client.side_effect=factory
+        with tempfile.TemporaryDirectory() as root, override_settings(MEDIA_ROOT=root):
+            response=self.client.post('/api/generate/',self.payload(),content_type='application/json')
+            self.assertEqual(response.status_code,201)
+            self.assertEqual(response.json()['status'],'completed')
+            self.assertTrue(Track.objects.get().audio)

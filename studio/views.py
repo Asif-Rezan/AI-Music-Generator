@@ -14,10 +14,12 @@ def serialize(t):
 
 @require_GET
 def index(request):
-    return render(request, 'studio/index.html', {'is_cloud': settings.IS_CLOUD, 'temporary_storage': settings.TEMPORARY_STORAGE, 'library_page': request.path == '/library/'})
+    return render(request, 'studio/index.html', {'is_cloud': settings.IS_CLOUD, 'temporary_storage': settings.TEMPORARY_STORAGE, 'library_page': request.path == '/library/', 'free_provider': settings.ACESTEP_PROVIDER == 'huggingface'})
 
 @require_GET
 def health(request):
+    if settings.ACESTEP_PROVIDER == 'huggingface':
+        return JsonResponse({'connected': False, 'provider': 'huggingface', 'message': 'Free ACE-Step via Hugging Face ZeroGPU. Shared GPU queue and daily quotas apply; availability is checked when you generate. Prompts and lyrics are sent to the public Space. An optional HF_TOKEN gives authenticated quota.'})
     try:
         data=engine.request('GET', '/health', timeout=2)
         return JsonResponse({'connected': True, 'engine': data})

@@ -138,3 +138,7 @@ if TEMPORARY_STORAGE:
     MIDDLEWARE.insert(1, "studio.middleware.TemporaryDatabaseMiddleware")
 
 IS_CLOUD = bool(os.getenv("VERCEL"))
+
+# A configured dedicated API takes priority. Otherwise use the public free Space in cloud.
+ACESTEP_PROVIDER = os.getenv('ACESTEP_PROVIDER', 'huggingface' if IS_CLOUD and not os.getenv('ACESTEP_URL') else 'rest')
+HF_TOKEN = os.getenv('HF_TOKEN', '')
