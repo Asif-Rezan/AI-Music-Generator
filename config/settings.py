@@ -132,3 +132,5 @@ if os.getenv("DATABASE_URL"):
     DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=True)
 if os.getenv("VERCEL"):
     MEDIA_ROOT = Path("/tmp/sonora-media")
+
+IS_CLOUD = bool(os.getenv("VERCEL"))

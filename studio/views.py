@@ -14,7 +14,7 @@ def serialize(t):
 
 @require_GET
 def index(request):
-    return render(request, 'studio/index.html')
+    return render(request, 'studio/index.html', {'is_cloud': settings.IS_CLOUD})
 
 @require_GET
 def health(request):
