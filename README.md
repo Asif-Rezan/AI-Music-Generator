@@ -53,3 +53,9 @@ Import with the Django preset. Pushes to main deploy automatically. Set DJANGO_S
 By default Vercel uses temporary SQLite at /tmp/sonora/db.sqlite3 and audio files at /tmp/sonora/media. The first request runs migrations under a process/thread lock. Each instance has its own library; history and audio may disappear on restart or when requests reach a different instance. Download audio promptly. This is explicitly disposable storage, not a durable library.
 
 Optionally set DATABASE_URL for PostgreSQL instead; run migrations against it before use. Audio still uses temporary storage unless replaced with a durable storage backend. Local development continues to use db.sqlite3 and media/ in the project folder.
+
+## Studio navigation and lyrics
+
+Create lives at `/`; the searchable library lives at `/library/`. Browser back/forward work with ordinary links, and a session draft preserves composer fields across navigation. Library filtering runs locally; unchanged polling results do not recreate audio players. Background polling pauses while the tab is hidden.
+
+Bengali and English lyrics are accepted as UTF-8, up to 12,000 characters. Paste lyrics with emoji decorations and Bengali section annotations directly. Originals are saved unchanged. The engine adapter normalizes Unicode, converts Bengali verse/chorus headings to section tags, expands a chorus marked “দুইবার” twice, and sets `vocal_language=bn` when Bengali characters are present. This prepares the API request; actual pronunciation and vocal quality depend on the connected ACE-Step model and have not been verified without a running inference server.

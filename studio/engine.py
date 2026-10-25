@@ -3,6 +3,7 @@ from urllib.parse import urlsplit
 import requests
 from django.conf import settings
 from django.core.files.base import ContentFile
+from .lyrics import prepare_lyrics, vocal_language
 class EngineError(Exception):
     pass
 
@@ -29,7 +30,8 @@ def request(method, path, **kwargs):
 
 def submit(track):
     result = request('POST', '/release_task', json={
-        'prompt': track.prompt, 'lyrics': '[Instrumental]' if track.instrumental else track.lyrics,
+        'prompt': track.prompt, 'lyrics': '[Instrumental]' if track.instrumental else prepare_lyrics(track.lyrics),
+        'vocal_language': vocal_language(track.lyrics),
         'audio_duration': track.duration, 'bpm': track.bpm, 'seed': track.seed,
         'use_random_seed': track.seed == -1, 'batch_size': 1, 'audio_format': 'mp3',
         'inference_steps': 8, 'thinking': False, 'use_cot_caption': False,

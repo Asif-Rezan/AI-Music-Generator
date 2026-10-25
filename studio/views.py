@@ -14,7 +14,7 @@ def serialize(t):
 
 @require_GET
 def index(request):
-    return render(request, 'studio/index.html', {'is_cloud': settings.IS_CLOUD, 'temporary_storage': settings.TEMPORARY_STORAGE})
+    return render(request, 'studio/index.html', {'is_cloud': settings.IS_CLOUD, 'temporary_storage': settings.TEMPORARY_STORAGE, 'library_page': request.path == '/library/'})
 
 @require_GET
 def health(request):

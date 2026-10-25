@@ -9,7 +9,7 @@ class StudioTests(TestCase):
     def payload(self, **kw):
         return dict(title='Night drive',prompt='Warm analog synthwave',lyrics='',duration=30,bpm=120,seed=-1,instrumental=True,**kw)
     def test_home_and_empty_library(self):
-        self.assertContains(self.client.get('/'), 'Turn an idea into')
+        self.assertContains(self.client.get('/'), 'Something only')
         self.assertEqual(self.client.get('/api/tracks/').json(), {'tracks':[]})
     def test_validation_and_malformed_json(self):
         for data in ['[]','{',json.dumps({'duration':999})]:
@@ -67,8 +67,8 @@ class StudioTests(TestCase):
 
     @override_settings(TEMPORARY_STORAGE=True, IS_CLOUD=True)
     def test_temporary_library_notice(self):
-        response = self.client.get('/')
-        self.assertContains(response, 'Temporary library')
+        response = self.client.get('/library/')
+        self.assertContains(response, 'Temporary collection')
         self.assertNotContains(response, 'connect PostgreSQL')
 
     @override_settings(IS_CLOUD=True, ACESTEP_URL='http://127.0.0.1:8001')
@@ -82,3 +82,27 @@ class StudioTests(TestCase):
         self.assertEqual(response.status_code, 503)
         self.assertIn('Configure ACESTEP_URL', response.json()['error'])
         self.assertFalse(Track.objects.exists())
+
+    def test_library_is_a_separate_page(self):
+        response = self.client.get('/library/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-page="library"')
+        self.assertContains(response, 'Search tracks')
+        self.assertNotContains(response, 'id="generator"')
+        self.assertContains(self.client.get('/'), 'href="/library/"')
+
+    @patch('studio.engine.requests.request')
+    def test_bengali_lyrics_preserved_and_prepared_for_engine(self, req):
+        lyrics = '🎵 (প্রথম অন্তরা)\nটুকটুক টুক, খরগোশ ছানা,\n🎶 (কোরাস — দুইবার)\nটুক টুক টুক, টুকটুকি,\n🎵 (শেষ অন্তরা)\nশুভরাত্রি, প্রজাপতি! 🌙'
+        req.return_value = Mock(json=lambda: {'code': 200, 'data': {'task_id': 'bengali'}})
+        data = self.payload()
+        data.update(lyrics=lyrics, instrumental=False)
+        response = self.client.post('/api/generate/', data, content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Track.objects.get().lyrics, lyrics)
+        sent = req.call_args.kwargs['json']
+        self.assertEqual(sent['vocal_language'], 'bn')
+        self.assertEqual(sent['lyrics'].count('[Chorus]'), 2)
+        self.assertEqual(sent['lyrics'].count('টুক টুক টুক, টুকটুকি,'), 2)
+        self.assertIn('শুভরাত্রি, প্রজাপতি!', sent['lyrics'])
+        self.assertNotIn('🎵', sent['lyrics'])
