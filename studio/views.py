@@ -1,4 +1,5 @@
 import json
+from django.conf import settings
 from django.http import JsonResponse, FileResponse
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_GET, require_POST
@@ -25,10 +26,14 @@ def health(request):
 
 @require_GET
 def tracks(request):
+    if not settings.CLOUD_STORAGE_READY:
+        return JsonResponse({'tracks': [], 'message': 'Connect a PostgreSQL database to enable your saved library.'})
     return JsonResponse({'tracks': [serialize(t) for t in Track.objects.all()[:100]]})
 
 @require_POST
 def generate(request):
+    if not settings.CLOUD_STORAGE_READY:
+        return JsonResponse({'error': 'Generation is not configured yet. Connect a PostgreSQL database and a reachable ACE-Step server in Vercel environment settings.'}, status=503)
     try:
         data=json.loads(request.body)
         if not isinstance(data,dict): raise ValueError()

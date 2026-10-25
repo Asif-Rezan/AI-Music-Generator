@@ -45,3 +45,7 @@ Eight tests cover rendering, validation, CSRF, official API submission, offline 
 On the development machine, real inference could not be tested: only 4.4 GB disk space was available, less than the documented core model storage requirement. The engine/model weights have not been installed. Django runs independently and the real offline path is verified.
 
 The development server binds only to loopback. Before network deployment add authentication, a durable worker queue, deployment settings, HTTPS, and storage quotas. Optional Django admin: `.venv/bin/python manage.py createsuperuser`.
+
+## Vercel
+
+Import this repository with the Django framework preset. Vercel serves static files automatically. Pushes to main deploy production. Set DJANGO_SECRET_KEY privately, DATABASE_URL to PostgreSQL, and ACESTEP_URL to your reachable inference API (plus ACESTEP_API_KEY when required). Run migrations against that database before enabling generation. Without DATABASE_URL, the studio renders but explicitly disables generation and explains the missing setup. Vercel cannot reach your computer's localhost engine. Audio in /tmp is temporary; durable cloud audio storage is still required before relying on saved audio across instances or deployments.

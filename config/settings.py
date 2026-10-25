@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,9 +25,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-bpf*l-7ct)5m#%-6@rg)z2jwl&#6&q9bwx6%&ng-ziqd5(v#=@'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DJANGO_DEBUG", "true").lower() == "true"
+DEBUG = os.getenv("DJANGO_DEBUG", "false" if os.getenv("VERCEL") else "true").lower() == "true"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver", ".vercel.app"]
+CSRF_TRUSTED_ORIGINS = ["https://*.vercel.app"]
 
 
 # Application definition
@@ -123,3 +125,10 @@ ACESTEP_URL = os.getenv("ACESTEP_URL", "http://127.0.0.1:8001").rstrip("/")
 ACESTEP_API_KEY = os.getenv("ACESTEP_API_KEY", "")
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
+CLOUD_STORAGE_READY = not os.getenv("VERCEL") or bool(os.getenv("DATABASE_URL"))
+if os.getenv("DATABASE_URL"):
+    DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=True)
+if os.getenv("VERCEL"):
+    MEDIA_ROOT = Path("/tmp/sonora-media")
